@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#17201c">
+  <title>Shuffler</title>
+
+  <style>
+    :root {
+      --bg: #17201c;
+      --panel: #202b26;
+      --panel-light: #29362f;
+      --text: #eef2ef;
+      --muted: #aab8b0;
+      --accent: #9eb7a7;
+      --border: #405047;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      display: flex;
+      justify-content: center;
+    }
+
+    main {
+      width: min(92%, 520px);
+      padding: 48px 0;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 500;
+      margin: 0 0 8px;
+    }
+
+    p {
+      line-height: 1.55;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .words {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    button {
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .word {
+      min-height: 62px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--panel);
+      font-size: 1.05rem;
+    }
+
+    .word:active {
+      background: var(--panel-light);
+    }
+
+    .secondary {
+      margin-top: 18px;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+    }
+
+    #letter-screen {
+      text-align: center;
+    }
+
+    .progress {
+      display: flex;
+      justify-content: center;
+      gap: 7px;
+      margin-bottom: 42px;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--border);
+    }
+
+    .dot.active {
+      background: var(--accent);
+    }
+
+    .tap-zone {
+      user-select: none;
+      touch-action: manipulation;
+      margin-top: 22px;
+      padding: 42px 22px 30px;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background: var(--panel);
+    }
+
+    .letter {
+      font-size: clamp(7rem, 30vw, 11rem);
+      line-height: .9;
+      font-weight: 500;
+      margin-bottom: 38px;
+    }
+
+    .instruction {
+      font-size: 1.08rem;
+      margin-bottom: 7px;
+    }
+
+    .detail {
+      color: var(--muted);
+      font-size: .92rem;
+      max-width: 330px;
+      margin: 0 auto;
+    }
+
+    .hold-track {
+      height: 4px;
+      max-width: 160px;
+      margin: 30px auto 0;
+      border-radius: 10px;
+      background: var(--border);
+      overflow: hidden;
+    }
+
+    .hold-bar {
+      width: 0;
+      height: 100%;
+      background: var(--accent);
+    }
+
+    .gesture {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: .85rem;
+    }
+
+    .pulse {
+      animation: pulse .16s ease-out;
+    }
+
+    @keyframes pulse {
+      50% { transform: scale(.985); }
+    }
+
+    .finish {
+      text-align: center;
+      padding-top: 90px;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 30px;
+    }
+
+    .primary {
+      min-height: 50px;
+      padding: 0 22px;
+      border: 0;
+      border-radius: 13px;
+      background: var(--accent);
+      color: #17201c;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .pulse { animation: none; }
+    }
+  </style>
+</head>
+
+<body>
+
+<main>
+
+  <section id="pick-screen">
+    <h1>Shuffler</h1>
+    <p class="muted">
+      Choose a word. Any one. Don't overthink it.
+    </p>
+
+    <div id="word-grid" class="words"></div>
+
+    <button id="reshuffle" class="secondary" type="button">
+      ↻ Different words
+    </button>
+  </section>
+
+
+  <section id="letter-screen" class="hidden">
+
+    <div id="progress" class="progress"></div>
+
+    <p class="muted">Think of a noun beginning with…</p>
+
+    <div id="tap-zone" class="tap-zone">
+
+      <div id="big-letter" class="letter">A</div>
+
+      <p class="instruction">
+        Picture the thing as vividly as you can.
+      </p>
+
+      <p class="detail">
+        See its shape, colour, texture, size — whatever comes to mind.
+      </p>
+
+      <div class="hold-track">
+        <div id="hold-bar" class="hold-bar"></div>
+      </div>
+
+    </div>
+
+    <p class="gesture">
+      tap when you've pictured it &nbsp;·&nbsp; hold to change letter
+    </p>
+
+  </section>
+
+
+  <section id="done-screen" class="finish hidden">
+
+    <h1>That's the word.</h1>
+
+    <p class="muted">
+      Keep shuffling, or stop here.
+    </p>
+
+    <div class="actions">
+      <button id="again" class="primary" type="button">
+        Go again
+      </button>
+
+      <button id="finish" class="secondary" type="button">
+        Done
+      </button>
+    </div>
+
+  </section>
+
+
+  <section id="finished-screen" class="finish hidden">
+
+    <h1>All done.</h1>
+
+    <p class="muted">
+      Put the screen down and let your mind drift.
+    </p>
+
+    <button id="restart" class="secondary" type="button">
+      Start again
+    </button>
+
+  </section>
+
+</main>
+
+
+<script>
+const words = [
+  "GARDEN", "PLANET", "BUTTON", "WINDOW",
+  "FOREST", "MARKET", "CANDLE", "POCKET",
+  "RIVER", "ORANGE", "PENCIL", "BADGER",
+  "BASKET", "JACKET", "MEADOW", "COFFEE",
+  "PILLOW", "BRIDGE", "TICKET", "SILVER",
+  "CLOUD", "CARROT", "LANTERN", "BISCUIT",
+  "THIMBLE", "CASTLE", "ANCHOR", "KETTLE",
+  "ROCKET", "WALNUT", "MIRROR", "PARCEL",
+  "LAVENDER", "HARBOUR", "MAGPIE", "TEAPOT",
+  "ACORN", "BLANKET", "CHERRY", "ISLAND"
+];
+
+let currentWord = "";
+let index = 0;
+let holding = false;
+let holdTimer = null;
+let animationFrame = null;
+let holdStart = 0;
+let advanced = false;
+
+const HOLD_TIME = 700;
+
+const pickScreen = document.querySelector("#pick-screen");
+const letterScreen = document.querySelector("#letter-screen");
+const doneScreen = document.querySelector("#done-screen");
+const finishedScreen = document.querySelector("#finished-screen");
+
+const grid = document.querySelector("#word-grid");
+const bigLetter = document.querySelector("#big-letter");
+const progress = document.querySelector("#progress");
+const tapZone = document.querySelector("#tap-zone");
+const holdBar = document.querySelector("#hold-bar");
+
+
+function show(screen) {
+  [pickScreen, letterScreen, doneScreen, finishedScreen]
+    .forEach(s => s.classList.add("hidden"));
+
+  screen.classList.remove("hidden");
+}
+
+
+function randomWords() {
+  return [...words]
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 6);
+}
+
+
+function showWords() {
+
+  grid.innerHTML = "";
+
+  randomWords().forEach(word => {
+
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.className = "word";
+    button.textContent = word.toLowerCase();
+
+    button.addEventListener("click", () => start(word));
+
+    grid.appendChild(button);
+  });
+}
+
+
+function start(word) {
+  currentWord = word;
+  index = 0;
+
+  renderLetter();
+  show(letterScreen);
+}
+
+
+function renderLetter() {
+
+  bigLetter.textContent = currentWord[index];
+
+  progress.innerHTML = "";
+
+  [...currentWord].forEach((letter, i) => {
+
+    const dot = document.createElement("span");
+
+    dot.className = "dot";
+
+    if (i <= index) {
+      dot.classList.add("active");
+    }
+
+    progress.appendChild(dot);
+  });
+
+  holdBar.style.width = "0";
+}
+
+
+function tapFeedback() {
+
+  tapZone.classList.remove("pulse");
+
+  void tapZone.offsetWidth;
+
+  tapZone.classList.add("pulse");
+}
+
+
+function advance() {
+
+  advanced = true;
+
+  cancelHold();
+
+  if (index < currentWord.length - 1) {
+
+    index++;
+    renderLetter();
+
+  } else {
+
+    show(doneScreen);
+  }
+}
+
+
+function animateHold() {
+
+  if (!holding) return;
+
+  const elapsed = performance.now() - holdStart;
+  const amount = Math.min(elapsed / HOLD_TIME, 1);
+
+  holdBar.style.width = (amount * 100) + "%";
+
+  if (amount < 1) {
+    animationFrame = requestAnimationFrame(animateHold);
+  }
+}
+
+
+function beginHold(event) {
+
+  if (event.button !== undefined && event.button !== 0) return;
+
+  advanced = false;
+  holding = true;
+  holdStart = performance.now();
+
+  holdBar.style.width = "0";
+
+  animationFrame = requestAnimationFrame(animateHold);
+
+  holdTimer = setTimeout(advance, HOLD_TIME);
+}
+
+
+function cancelHold() {
+
+  holding = false;
+
+  if (holdTimer) {
+    clearTimeout(holdTimer);
+    holdTimer = null;
+  }
+
+  if (animationFrame) {
+    cancelAnimationFrame(animationFrame);
+    animationFrame = null;
+  }
+
+  if (!advanced) {
+    holdBar.style.width = "0";
+  }
+}
+
+
+function releaseHold() {
+
+  if (!holding) return;
+
+  const alreadyAdvanced = advanced;
+
+  cancelHold();
+
+  if (!alreadyAdvanced) {
+    tapFeedback();
+  }
+
+  advanced = false;
+}
+
+
+tapZone.addEventListener("pointerdown", beginHold);
+tapZone.addEventListener("pointerup", releaseHold);
+tapZone.addEventListener("pointercancel", cancelHold);
+
+tapZone.addEventListener("pointerleave", () => {
+  if (holding) cancelHold();
+});
+
+
+document.querySelector("#reshuffle")
+  .addEventListener("click", showWords);
+
+document.querySelector("#again")
+  .addEventListener("click", () => {
+    showWords();
+    show(pickScreen);
+  });
+
+document.querySelector("#finish")
+  .addEventListener("click", () => {
+    show(finishedScreen);
+  });
+
+document.querySelector("#restart")
+  .addEventListener("click", () => {
+    showWords();
+    show(pickScreen);
+  });
+
+
+showWords();
+</script>
+
+</body>
+</html>
